@@ -11,6 +11,8 @@ const btnRoll = document.querySelector('.btn--roll');
 const btnNew = document.querySelector('.btn--new');
 const btnHold = document.querySelector('.btn--hold');
 
+const WINNING_SCORE = 100;
+
 let scores, currentScore, activePlayer, playing
 
 const init = function () {
@@ -18,9 +20,6 @@ const init = function () {
     currentScore = 0;
     activePlayer = 0;
     playing = true;
-
-    score0El.textContent = 0;
-    score1El.textContent = 0;
 
     score0El.textContent = 0;
     score1El.textContent = 0;
@@ -61,11 +60,11 @@ btnHold.addEventListener('click', function () {
     if (playing) {
         scores[activePlayer] += currentScore;
         document.getElementById(`score--${activePlayer}`).textContent = scores[activePlayer];
-    if (scores[activePlayer] >= 100) {
+    if (scores[activePlayer] >= WINNING_SCORE) {
         playing = false;
         diceEl.classList.add('hidden');
         document.querySelector(`.player--${activePlayer}`).classList.add('player--winner');
-        document.querySelector(`.player--${activePlayer}`).classList.remove('player-active');
+        document.querySelector(`.player--${activePlayer}`).classList.remove('player--active');
     } else {
         switchPlayer();
     }
