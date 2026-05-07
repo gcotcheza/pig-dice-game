@@ -8,29 +8,36 @@ Pig is a simple dice game which involves rolling a single dice. It's played betw
 
 ## How to Play
 
-1. **Start the Game**: Click on the "New Game" button to reset the game and start a new session.
-2. **Roll the Dice**: On your turn, click the "Roll Dice" button to roll the dice. Your turn's score is added to your current score, which is temporary.
-   - If you roll a 1, your current score for this turn is lost, and it's the next player's turn.
-   - If you roll any other number, it is added to your current score for the turn. You can choose to roll again or hold.
-3. **Hold**: If you decide to hold, click the "Hold" button. Your current score for the turn is added to your total score, and it becomes the next player's turn.
-4. **Winning the Game**: The first player to reach or exceed 100 points wins the game. The game will automatically highlight the winner and disable the dice roll until a new game starts.
+1. **Set Up**: Optionally edit each player's name and pick a target score with the "First to" input (default is 100).
+2. **Start the Game**: Click "New Game" to reset and begin a session.
+3. **Roll the Dice**: On your turn, click "Roll" to roll the die. The result is added to your *current* (turn) score.
+   - Roll a **1** and your current score is wiped — it becomes the other player's turn.
+   - Roll anything else and you can keep rolling or hold.
+4. **Hold**: Click "Hold" to bank your current score into your total and pass the turn.
+5. **Winning**: The first player to reach the target score wins — winner is highlighted and rolling is disabled until a new game starts.
 
 ### Game Controls
 
-- **Roll Button**: Roll the dice for your turn.
-- **Hold Button**: Save your current points to your total score and switch turns.
-- **New Game Button**: Resets the game to start over.
+- **Roll** / **Hold** / **New Game** buttons, or keyboard shortcuts: <kbd>R</kbd> roll, <kbd>H</kbd> hold, <kbd>N</kbd> new game.
+- **Rules** button opens an in-game rules modal.
+
+## Features
+
+- Editable player names
+- Configurable target score
+- 3D animated dice roll
+- Per-turn roll history per player
+- Confetti win animation
+- Keyboard shortcuts and an in-game rules modal
 
 ## Technical Implementation
 
-The game logic is implemented in JavaScript using event listeners for user interactions:
+Vanilla HTML/CSS/JavaScript with no build step or dependencies. The game logic lives in `script.js` and uses `'use strict'` mode:
 
-- The game starts in the `init` function, setting up initial scores and states.
-- Players can roll the dice using the `btnRoll` event listener, which generates a random dice roll and updates the UI accordingly.
-- The `btnHold` event listener allows players to save their current score to their total and switch turns.
-- The `init` function can be called again to reset the game at any point.
-
-This project serves as a practical application of JavaScript, CSS, and HTML in creating interactive web applications.
+- `init()` sets up initial scores, current totals, the active player, and resets UI state. Called on load and whenever "New Game" is clicked.
+- The roll handler generates a random 1–6, updates the dice cube, and either accumulates the value or switches the active player on a 1.
+- The hold handler banks the current score; when a player reaches the target, the game ends and the winner is highlighted.
+- Player elements use a `--0` / `--1` suffix convention (e.g. `score--0`, `current--1`) and are looked up via template literals.
 
 ## Deployment
 
