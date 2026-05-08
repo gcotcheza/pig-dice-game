@@ -202,7 +202,7 @@ class PigGame {
       this.renderTurnName();
       this.renderProgress();
       this.currentPill.classList.add('is-winner');
-      this.launchConfetti();
+      this.launchCelebration();
     } else {
       this.switchPlayer();
       this.renderPlayers();
@@ -359,19 +359,20 @@ class PigGame {
     setTimeout(() => el.classList.remove('player--bust'), 600);
   }
 
-  // --- Confetti ---
+  // --- Celebration: confetti + fireworks ---
 
-  launchConfetti() {
+  launchCelebration() {
     const canvas = this.confettiCanvas;
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const colors = ['#6c3ce0', '#8b5cf6', '#d946a8', '#f0c27a', '#f0edf6', '#ffd700'];
-    const particles = [];
 
+    // Falling confetti
+    const confetti = [];
     for (let i = 0; i < 120; i++) {
-      particles.push({
+      confetti.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height - canvas.height,
         w: Math.random() * 8 + 4,
@@ -385,28 +386,78 @@ class PigGame {
       });
     }
 
+    // Fireworks state
+    const shells = [];
+    const sparks = [];
+    const totalShells = 10;
+    const launchWindowMs = 3500;
+    let shellsLaunched = 0;
+    const startTime = performance.now();
+
+    const launchShell = () => {
+      const x = canvas.width * (0.15 + Math.random() * 0.7);
+      const startY = canvas.height + 20;
+      const targetY = canvas.height * (0.1 + Math.random() * 0.3);
+      const flightFrames = 45 + Math.random() * 15;
+      const vy = -(startY - targetY) / flightFrames;
+      shells.push({
+        x,
+        y: startY,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy,
+        targetY,
+        color: colors[Math.trunc(Math.random() * colors.length)],
+        trail: [],
+      });
+      shellsLaunched++;
+    };
+
+    const explode = (shell) => {
+      const numSparks = 50 + Math.trunc(Math.random() * 30);
+      for (let i = 0; i < numSparks; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 4.5;
+        sparks.push({
+          x: shell.x,
+          y: shell.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: shell.color,
+          life: 1.0,
+          decay: 0.012 + Math.random() * 0.012,
+          size: 1.5 + Math.random() * 2,
+        });
+      }
+    };
+
     this._confettiRunning = true;
-    const animate = () => {
+
+    const animate = (now) => {
       if (!this._confettiRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Schedule shell launches over the launch window
+      const elapsed = now - startTime;
+      const desiredShells = Math.min(
+        totalShells,
+        Math.floor((elapsed / launchWindowMs) * totalShells) + 1
+      );
+      while (shellsLaunched < desiredShells) launchShell();
+
       let alive = 0;
-      for (const p of particles) {
+
+      // Confetti
+      for (const p of confetti) {
         p.x += p.vx;
         p.y += p.vy;
         p.vy += 0.05;
         p.rot += p.rotSpeed;
-
-        if (p.y > canvas.height) {
-          p.opacity -= 0.02;
-        }
-
+        if (p.y > canvas.height) p.opacity -= 0.02;
         if (p.opacity <= 0) continue;
         alive++;
-
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate((p.rot * Math.PI) / 180);
@@ -416,7 +467,70 @@ class PigGame {
         ctx.restore();
       }
 
-      if (alive > 0) {
+      // Rising shells
+      for (let i = shells.length - 1; i >= 0; i--) {
+        const s = shells[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.04;
+
+        s.trail.push({ x: s.x, y: s.y, life: 1 });
+        if (s.trail.length > 8) s.trail.shift();
+
+        for (const t of s.trail) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, t.life);
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          t.life -= 0.15;
+        }
+
+        ctx.save();
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = s.color;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        alive++;
+
+        // Explode near apex (vy approaches zero) or at target altitude
+        if (s.vy >= -0.5 || s.y <= s.targetY) {
+          explode(s);
+          shells.splice(i, 1);
+        }
+      }
+
+      // Sparks
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const sp = sparks[i];
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.vy += 0.06;
+        sp.vx *= 0.99;
+        sp.life -= sp.decay;
+        if (sp.life <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+        alive++;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, sp.life);
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = sp.color;
+        ctx.fillStyle = sp.color;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (alive > 0 || shellsLaunched < totalShells) {
         requestAnimationFrame(animate);
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
