@@ -6,75 +6,132 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=Playfair+Display:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css?v=21" />
     <title>Pig Game</title>
   </head>
   <body>
     <canvas id="confetti-canvas"></canvas>
-    <main>
-      <section class="player player--0 player--active">
-        <input class="name name-input" id="name--0" value="Player 1" maxlength="12" />
-        <p class="score" id="score--0">0</p>
-        <div class="history" id="history--0"></div>
-        <div class="current">
-          <p class="current-label">Current</p>
-          <p class="current-score" id="current--0">0</p>
-        </div>
-      </section>
 
-      <div class="center-column">
-        <div class="center-top">
-          <button class="btn btn--new">New game</button>
+    <div class="app">
+      <button class="gear mobile-only" id="btn-settings" aria-label="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+
+      <header class="scoreboard">
+        <section class="pcard player--0" id="player--0">
+          <div class="pcard__top">
+            <input
+              class="pcard__name"
+              id="name--0"
+              value="Player 1"
+              maxlength="12"
+              aria-label="Player 1 name"
+            />
+            <span class="pcard__dot mobile-only"></span>
+          </div>
+          <div class="pcard__score" id="score--0">0</div>
+          <div class="pcard__progress mobile-only">
+            <div class="pcard__progress-fill" id="progress--0" style="width: 0%"></div>
+          </div>
+          <div class="pcard__history" id="history--0"></div>
+          <div class="pcard__current desktop-only">
+            <p class="pcard__current-label">Current</p>
+            <p class="pcard__current-value" id="pp-current--0">0</p>
+          </div>
+        </section>
+
+        <section class="pcard player--1" id="player--1">
+          <div class="pcard__top">
+            <input
+              class="pcard__name"
+              id="name--1"
+              value="Player 2"
+              maxlength="12"
+              aria-label="Player 2 name"
+            />
+            <span class="pcard__dot mobile-only"></span>
+          </div>
+          <div class="pcard__score" id="score--1">0</div>
+          <div class="pcard__progress mobile-only">
+            <div class="pcard__progress-fill" id="progress--1" style="width: 0%"></div>
+          </div>
+          <div class="pcard__history" id="history--1"></div>
+          <div class="pcard__current desktop-only">
+            <p class="pcard__current-label">Current</p>
+            <p class="pcard__current-value" id="pp-current--1">0</p>
+          </div>
+        </section>
+      </header>
+
+      <main class="stage">
+        <div class="turn-label mobile-only">Turn</div>
+        <div class="turn-name mobile-only" id="turn-name">Player 1</div>
+
+        <div class="desktop-top desktop-only">
+          <button class="btn btn--secondary btn--new-desktop" id="btn-new-desktop">New game</button>
           <div class="target-score">
             <label for="target">First to</label>
             <input type="number" id="target" min="10" max="999" value="100" />
           </div>
         </div>
 
-        <div class="center-dice">
-          <div class="dice-stage">
-            <div class="dice-cube" id="dice-cube">
-              <div class="dice-face dice-face--1"><img src="dice-1.png" alt="1" /></div>
-              <div class="dice-face dice-face--2"><img src="dice-2.png" alt="2" /></div>
-              <div class="dice-face dice-face--3"><img src="dice-3.png" alt="3" /></div>
-              <div class="dice-face dice-face--4"><img src="dice-4.png" alt="4" /></div>
-              <div class="dice-face dice-face--5"><img src="dice-5.png" alt="5" /></div>
-              <div class="dice-face dice-face--6"><img src="dice-6.png" alt="6" /></div>
-            </div>
-            <div class="dice-shadow"></div>
+        <div class="dice-stage">
+          <div class="dice-cube" id="dice-cube">
+            <div class="dice-face dice-face--1"><img src="dice-1.png" alt="1" /></div>
+            <div class="dice-face dice-face--2"><img src="dice-2.png" alt="2" /></div>
+            <div class="dice-face dice-face--3"><img src="dice-3.png" alt="3" /></div>
+            <div class="dice-face dice-face--4"><img src="dice-4.png" alt="4" /></div>
+            <div class="dice-face dice-face--5"><img src="dice-5.png" alt="5" /></div>
+            <div class="dice-face dice-face--6"><img src="dice-6.png" alt="6" /></div>
           </div>
+          <div class="dice-shadow"></div>
         </div>
 
-        <div class="center-bottom">
-          <div class="btn-group">
-            <button class="btn btn--roll"><span class="btn-icon">&#9860;</span> Roll</button>
-            <button class="btn btn--hold"><span class="btn-icon">&#9745;</span> Hold</button>
-          </div>
-          <button class="btn btn--rules" id="btn-rules">Rules</button>
-          <div class="keyboard-hints">
-            <span><kbd>R</kbd> Roll</span>
-            <span><kbd>H</kbd> Hold</span>
-            <span><kbd>N</kbd> New</span>
-          </div>
+        <div class="current-pill mobile-only" id="current-pill">
+          <div class="current-pill__label">Current</div>
+          <div class="current-pill__value" id="current-value">0</div>
+          <div class="streak" id="streak"></div>
         </div>
+
+      </main>
+
+      <footer class="actions">
+        <button class="btn btn--primary btn--roll">
+          <span class="btn-icon">&#9860;</span> Roll
+        </button>
+        <button class="btn btn--secondary btn--hold">Hold</button>
+        <button class="btn btn--secondary btn--rules-desktop desktop-only" id="btn-rules-desktop">
+          Rules
+        </button>
+      </footer>
+
+      <div class="keyboard-hints">
+        <span><kbd>R</kbd> Roll</span>
+        <span><kbd>H</kbd> Hold</span>
+        <span><kbd>N</kbd> New</span>
       </div>
+    </div>
 
-      <section class="player player--1">
-        <input class="name name-input" id="name--1" value="Player 2" maxlength="12" />
-        <p class="score" id="score--1">0</p>
-        <div class="history" id="history--1"></div>
-        <div class="current">
-          <p class="current-label">Current</p>
-          <p class="current-score" id="current--1">0</p>
-        </div>
-      </section>
-    </main>
-
-    <div class="modal-overlay" id="rules-overlay">
+    <div class="modal-overlay" id="settings-overlay">
       <div class="modal">
-        <button class="modal-close" id="rules-close">&times;</button>
-        <h2>Rules</h2>
+        <button class="modal-close" id="settings-close" aria-label="Close">&times;</button>
+
+        <h2 class="mobile-only">Settings</h2>
+        <div class="settings-row mobile-only">
+          <button class="btn btn--secondary btn--full" id="btn-new-modal">New Game</button>
+        </div>
+        <div class="settings-row mobile-only">
+          <label class="settings-label" for="target-modal">First to</label>
+          <input type="number" id="target-modal" min="10" max="999" value="100" />
+        </div>
+        <div class="settings-divider mobile-only"></div>
+
+        <h2 class="desktop-only">Rules</h2>
+        <h3 class="mobile-only">Rules</h3>
         <p>Each turn, a player repeatedly rolls a die until either a 1 is rolled or the player decides to "hold":</p>
         <ul>
           <li>If the player rolls a <strong>1</strong>, they score nothing and it becomes the next player's turn.</li>
@@ -85,6 +142,6 @@
       </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=7"></script>
   </body>
 </html>

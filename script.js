@@ -3,16 +3,16 @@
 class PigGame {
   constructor() {
     this.playerEls = [
-      document.querySelector('.player--0'),
-      document.querySelector('.player--1'),
+      document.getElementById('player--0'),
+      document.getElementById('player--1'),
     ];
     this.scoreEls = [
       document.getElementById('score--0'),
       document.getElementById('score--1'),
     ];
-    this.currentEls = [
-      document.getElementById('current--0'),
-      document.getElementById('current--1'),
+    this.progressEls = [
+      document.getElementById('progress--0'),
+      document.getElementById('progress--1'),
     ];
     this.historyEls = [
       document.getElementById('history--0'),
@@ -22,19 +22,58 @@ class PigGame {
       document.getElementById('name--0'),
       document.getElementById('name--1'),
     ];
-    this.diceCube = document.getElementById('dice-cube');
-    this.targetInput = document.getElementById('target');
-    this.confettiCanvas = document.getElementById('confetti-canvas');
+    this.ppCurrentEls = [
+      document.getElementById('pp-current--0'),
+      document.getElementById('pp-current--1'),
+    ];
 
-    // Event listeners
-    document.querySelector('.btn--roll').addEventListener('click', () => this.roll());
-    document.querySelector('.btn--hold').addEventListener('click', () => this.hold());
-    document.querySelector('.btn--new').addEventListener('click', () => this.newGame());
+    this.diceCube = document.getElementById('dice-cube');
+    this.confettiCanvas = document.getElementById('confetti-canvas');
+    this.turnNameEl = document.getElementById('turn-name');
+    this.currentPill = document.getElementById('current-pill');
+    this.currentValueEl = document.getElementById('current-value');
+    this.streakEl = document.getElementById('streak');
+
+    // Two target inputs (desktop inline + mobile modal) — keep in sync
+    this.targetInputs = [
+      document.getElementById('target'),
+      document.getElementById('target-modal'),
+    ];
+
+    this.btnRoll = document.querySelector('.btn--roll');
+    this.btnHold = document.querySelector('.btn--hold');
+
+    this.btnRoll.addEventListener('click', () => this.roll());
+    this.btnHold.addEventListener('click', () => this.hold());
+
+    document.getElementById('btn-new-desktop').addEventListener('click', () => this.newGame());
+    document.getElementById('btn-new-modal').addEventListener('click', () => {
+      this.newGame();
+      this.closeSettings();
+    });
 
     this.nameEls.forEach((el) => {
-      el.addEventListener('change', () => this.save());
+      el.addEventListener('change', () => {
+        this.save();
+        this.renderTurnName();
+      });
+      el.addEventListener('input', () => this.renderTurnName());
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') el.blur();
+      });
+    });
+
+    this.targetInputs.forEach((el) => {
+      el.addEventListener('change', () => {
+        const val = Math.max(10, Math.min(999, parseInt(el.value, 10) || 100));
+        this.targetInputs.forEach((other) => {
+          other.value = val;
+        });
+        if (!this.gameStarted()) {
+          this.targetScore = val;
+          this.renderProgress();
+          this.save();
+        }
       });
     });
 
@@ -44,25 +83,27 @@ class PigGame {
       if (key === 'r') this.roll();
       else if (key === 'h') this.hold();
       else if (key === 'n') this.newGame();
+      else if (e.key === 'Escape') this.closeSettings();
     });
 
-    // Rules modal
-    this.rulesOverlay = document.getElementById('rules-overlay');
-    document.getElementById('btn-rules').addEventListener('click', () => this.openRules());
-    document.getElementById('rules-close').addEventListener('click', () => this.closeRules());
-    this.rulesOverlay.addEventListener('click', (e) => {
-      if (e.target === this.rulesOverlay) this.closeRules();
+    // Settings modal — opened by gear (mobile) or Rules button (desktop)
+    this.settingsOverlay = document.getElementById('settings-overlay');
+    document.getElementById('btn-settings').addEventListener('click', () => this.openSettings());
+    document.getElementById('btn-rules-desktop').addEventListener('click', () => this.openSettings());
+    document.getElementById('settings-close').addEventListener('click', () => this.closeSettings());
+    this.settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === this.settingsOverlay) this.closeSettings();
     });
 
     this.load() || this.init();
   }
 
-  openRules() {
-    this.rulesOverlay.classList.add('modal--open');
+  openSettings() {
+    this.settingsOverlay.classList.add('modal--open');
   }
 
-  closeRules() {
-    this.rulesOverlay.classList.remove('modal--open');
+  closeSettings() {
+    this.settingsOverlay.classList.remove('modal--open');
   }
 
   // --- Game Logic ---
@@ -71,49 +112,84 @@ class PigGame {
     this.scores = [0, 0];
     this.history = [[], []];
     this.currentScore = 0;
+    this.currentRolls = 0;
     this.activePlayer = 0;
     this.playing = true;
     this.names = ['Player 1', 'Player 2'];
-    this.targetScore = parseInt(this.targetInput.value, 10) || 100;
-    this.targetInput.disabled = false;
+    this.targetScore = parseInt(this.targetInputs[0].value, 10) || 100;
+    this.setTargetInputsDisabled(false);
     this.stopConfetti();
     this.render();
     this.save();
   }
 
   newGame() {
-    this.targetScore = parseInt(this.targetInput.value, 10) || 100;
+    this.targetScore = parseInt(this.targetInputs[0].value, 10) || 100;
     this.init();
+  }
+
+  gameStarted() {
+    return (
+      this.scores[0] > 0 ||
+      this.scores[1] > 0 ||
+      this.currentScore > 0 ||
+      this.history[0].length > 0 ||
+      this.history[1].length > 0
+    );
+  }
+
+  setTargetInputsDisabled(disabled) {
+    this.targetInputs.forEach((el) => {
+      el.disabled = disabled;
+    });
   }
 
   switchPlayer() {
     this.currentScore = 0;
+    this.currentRolls = 0;
     this.activePlayer = 1 - this.activePlayer;
   }
 
-  roll() {
-    if (!this.playing) return;
+  updateActionButtons() {
+    const enabled = this.playing && !this.rolling;
+    this.btnRoll.disabled = !enabled;
+    this.btnHold.disabled = !enabled || this.currentRolls === 0;
+  }
 
-    this.targetInput.disabled = true;
+  roll() {
+    if (!this.playing || this.rolling) return;
+
+    this.setTargetInputsDisabled(true);
+    this.rolling = true;
+    this.updateActionButtons();
 
     const dice = Math.trunc(Math.random() * 6) + 1;
-    this.showDice(dice);
-
-    if (dice !== 1) {
-      this.currentScore += dice;
-      this.currentEls[this.activePlayer].textContent = this.currentScore;
-      this.popElement(this.currentEls[this.activePlayer], 'current--pop');
-    } else {
-      this.bustFlash();
-      this.history[this.activePlayer].push(0);
-      this.switchPlayer();
-      this.renderPlayers();
-    }
-    this.save();
+    this.showDice(dice, () => {
+      if (dice !== 1) {
+        this.currentScore += dice;
+        this.currentRolls += 1;
+        this.renderCurrent();
+        this.popElement(this.currentValueEl, 'current--pop');
+        this.popElement(this.ppCurrentEls[this.activePlayer], 'current--pop');
+        this.renderStreak();
+      } else {
+        this.bustFlash();
+        this.history[this.activePlayer].push(0);
+        this.switchPlayer();
+        this.renderPlayers();
+        this.renderTurnName();
+        this.renderCurrent();
+        this.renderStreak();
+      }
+      this.rolling = false;
+      this.updateActionButtons();
+      this.save();
+    });
   }
 
   hold() {
-    if (!this.playing) return;
+    if (!this.playing || this.rolling) return;
+    if (this.currentRolls === 0) return;
 
     this.scores[this.activePlayer] += this.currentScore;
     this.history[this.activePlayer].push(this.currentScore);
@@ -123,11 +199,18 @@ class PigGame {
     if (this.scores[this.activePlayer] >= this.targetScore) {
       this.playing = false;
       this.renderPlayers();
+      this.renderTurnName();
+      this.renderProgress();
+      this.currentPill.classList.add('is-winner');
       this.launchConfetti();
     } else {
       this.switchPlayer();
       this.renderPlayers();
+      this.renderTurnName();
+      this.renderCurrent();
+      this.renderStreak();
     }
+    this.updateActionButtons();
     this.save();
   }
 
@@ -135,18 +218,59 @@ class PigGame {
 
   render() {
     this.renderPlayers();
-    this.diceCube.classList.add('hidden');
-    this.targetInput.value = this.targetScore;
+    this.renderTurnName();
+    this.renderCurrent();
+    this.renderStreak();
+    this.renderProgress();
+    this.resetDice();
+    this.targetInputs.forEach((el) => {
+      el.value = this.targetScore;
+    });
+    this.currentPill.classList.toggle('is-winner', !this.playing);
+    this.updateActionButtons();
   }
 
   renderPlayers() {
     for (let i = 0; i < 2; i++) {
       this.scoreEls[i].textContent = this.scores[i];
-      this.currentEls[i].textContent = i === this.activePlayer ? this.currentScore : 0;
       this.nameEls[i].value = this.names[i];
       this.playerEls[i].classList.toggle('player--active', i === this.activePlayer && this.playing);
       this.playerEls[i].classList.toggle('player--winner', !this.playing && i === this.activePlayer);
       this.renderHistory(i);
+    }
+    this.renderProgress();
+    this.renderPerPlayerCurrent();
+  }
+
+  renderTurnName() {
+    const name = this.nameEls[this.activePlayer].value || `Player ${this.activePlayer + 1}`;
+    this.turnNameEl.textContent = this.playing ? name : `${name} wins!`;
+    this.turnNameEl.classList.toggle('is-winner', !this.playing);
+  }
+
+  renderCurrent() {
+    this.currentValueEl.textContent = this.currentScore;
+    this.renderPerPlayerCurrent();
+  }
+
+  renderPerPlayerCurrent() {
+    for (let i = 0; i < 2; i++) {
+      this.ppCurrentEls[i].textContent = i === this.activePlayer ? this.currentScore : 0;
+    }
+  }
+
+  renderStreak() {
+    const max = 8;
+    const count = Math.min(this.currentRolls, max);
+    this.streakEl.innerHTML = Array.from({ length: count })
+      .map((_, i) => `<span class="streak__dot" style="animation-delay:${i * 0.04}s"></span>`)
+      .join('');
+  }
+
+  renderProgress() {
+    for (let i = 0; i < 2; i++) {
+      const pct = Math.min(100, (this.scores[i] / this.targetScore) * 100);
+      this.progressEls[i].style.width = `${pct}%`;
     }
   }
 
@@ -156,7 +280,6 @@ class PigGame {
       this.historyEls[player].innerHTML = '';
       return;
     }
-
     const recent = rounds.slice(-5);
     this.historyEls[player].innerHTML = recent
       .map(
@@ -169,42 +292,57 @@ class PigGame {
   // --- Dice Animation ---
 
   static FACE_ROTATIONS = {
-    1: 'rotateX(0deg) rotateY(0deg)',
-    2: 'rotateX(0deg) rotateY(180deg)',
-    3: 'rotateX(0deg) rotateY(90deg)',
-    4: 'rotateX(0deg) rotateY(-90deg)',
-    5: 'rotateX(-90deg) rotateY(0deg)',
-    6: 'rotateX(90deg) rotateY(0deg)',
+    1: { x: 0, y: 0 },
+    2: { x: 0, y: 180 },
+    3: { x: 0, y: 90 },
+    4: { x: 0, y: -90 },
+    5: { x: -90, y: 0 },
+    6: { x: 90, y: 0 },
   };
 
-  showDice(value) {
-    const cube = this.diceCube;
+  static ROLL_DURATION_MS = 850;
+  static ROLL_REVOLUTIONS = 2;
 
-    // Reset state
+  resetDice() {
+    const cube = this.diceCube;
     cube.classList.remove('hidden', 'dice--rolling', 'dice--landed');
+    cube.style.transition = 'none';
+    cube.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    cube.style.setProperty('--land-transform', 'rotateX(0deg) rotateY(0deg)');
+  }
+
+  showDice(value, onLand) {
+    const cube = this.diceCube;
+    const face = PigGame.FACE_ROTATIONS[value];
+    const spins = PigGame.ROLL_REVOLUTIONS * 360;
+    const targetX = spins + face.x;
+    const targetY = spins + face.y;
+    const landTransform = `rotateX(${face.x}deg) rotateY(${face.y}deg)`;
+
+    cube.classList.remove('hidden', 'dice--landed');
     cube.style.transition = 'none';
     cube.style.transform = 'rotateX(0deg) rotateY(0deg)';
     void cube.offsetWidth;
 
-    // Start rolling animation
     cube.classList.add('dice--rolling');
+    cube.style.transition = `transform ${PigGame.ROLL_DURATION_MS}ms cubic-bezier(0.45, 0.05, 0.25, 1)`;
+    cube.style.transform = `rotateX(${targetX}deg) rotateY(${targetY}deg)`;
 
     setTimeout(() => {
-      // Stop rolling, snap to correct face
       cube.classList.remove('dice--rolling');
       cube.style.transition = 'none';
-      const landTransform = PigGame.FACE_ROTATIONS[value];
       cube.style.setProperty('--land-transform', landTransform);
       cube.style.transform = landTransform;
-
-      // Trigger bounce
       void cube.offsetWidth;
+
       cube.classList.add('dice--landed');
+
+      if (onLand) onLand();
 
       setTimeout(() => {
         cube.classList.remove('dice--landed');
-      }, 500);
-    }, 1000);
+      }, 450);
+    }, PigGame.ROLL_DURATION_MS);
   }
 
   popElement(el, className) {
@@ -305,6 +443,7 @@ class PigGame {
       scores: this.scores,
       history: this.history,
       currentScore: this.currentScore,
+      currentRolls: this.currentRolls,
       activePlayer: this.activePlayer,
       playing: this.playing,
       targetScore: this.targetScore,
@@ -323,13 +462,12 @@ class PigGame {
       this.scores = state.scores;
       this.history = state.history || [[], []];
       this.currentScore = state.currentScore || 0;
+      this.currentRolls = state.currentRolls || 0;
       this.activePlayer = state.activePlayer || 0;
       this.playing = state.playing;
       this.targetScore = state.targetScore || 100;
       this.names = state.names || ['Player 1', 'Player 2'];
-      const gameStarted = this.scores[0] > 0 || this.scores[1] > 0 ||
-                           this.currentScore > 0 || this.history[0].length > 0 || this.history[1].length > 0;
-      this.targetInput.disabled = gameStarted;
+      this.setTargetInputsDisabled(this.gameStarted());
       this.render();
       return true;
     } catch {
