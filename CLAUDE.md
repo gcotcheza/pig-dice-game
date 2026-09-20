@@ -1,3 +1,26 @@
+# Pig Dice Game — house rules
+
+Fleet engineering standards: docs/STANDARDS.md (also loaded via .claude/rules/standards.md).
+They apply here in full; anything below overrides them and says why.
+
+- Where work happens: a worktree under `/var/www/pig-dice-game-worktrees/` — this checkout is production, served live by nginx, so never edit, branch or build in it.
+- Merging to main does not deploy. Runbook: `.claude/commands/deploy.md`.
+- The gate: none — see Exceptions. Browser gate: none yet.
+- Layers: none — a flat directory of static files loaded straight by the browser.
+- Why-decisions: docs/DECISIONS.md.
+- Project-specific rules below.
+
+## Exceptions
+
+Rules this project knowingly does not meet yet: the rule, why, and what would have to be true to drop it.
+
+- **T1 — the gate is green before merge.** No gate exists: static files, no build, no test suite, so a gate would have nothing to run. Dropped the day a build step or a test suite exists.
+- **T2 — the gate runs in the containers.** No gate and no image; the bytes in the repo are the bytes nginx serves, so there is no production runtime to reproduce. Dropped with T1, when there is a gate to containerise.
+- **T5 — a test must be proven able to fail.** No suite to prove; this adoption's red/green was run against the fleet-level `scripts/fleet-versions.sh` instead of a project test. Dropped the day a suite exists.
+- **T6 — browser tests in-repo against a throwaway stack.** None: no gate to hang Playwright on and no seeded stack. Dropped when a gate exists — a static server is cheap to seed.
+- **T7 — the browser gate runs inside its caps.** Nothing to cap while T6 stands. Dropped with T6.
+- **Drift check (ROLLOUT step 4).** Not an in-gate test: the fleet-level `scripts/fleet-versions.sh` is this project's drift check, hashing the vendored body against its own header and against canonical. Dropped into the repo the day a test runner exists.
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
