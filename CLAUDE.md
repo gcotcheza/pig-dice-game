@@ -4,8 +4,8 @@ Fleet engineering standards: docs/STANDARDS.md (also loaded via .claude/rules/st
 They apply here in full; anything below overrides them and says why.
 
 - Where work happens: a worktree under `/var/www/pig-dice-game-worktrees/` — this checkout is production, served live by nginx, so never edit, branch or build in it.
-- Merging to main does not deploy. Runbook: `.claude/commands/deploy.md`.
-- The gate: none — see Exceptions. Browser gate: none yet.
+- Merging to main does not deploy. Runbook: `.claude/commands/deploy.md`, which runs `scripts/deploy.sh <PR#>`.
+- The gate: `scripts/check.sh` — static checks, on the host, see Exceptions. Browser gate: none yet.
 - Layers: none — a flat directory of static files loaded straight by the browser.
 - Why-decisions: docs/DECISIONS.md.
 - Project-specific rules below.
@@ -14,9 +14,9 @@ They apply here in full; anything below overrides them and says why.
 
 Rules this project knowingly does not meet yet: the rule, why, and what would have to be true to drop it.
 
-- **T1 — the gate is green before merge.** No gate exists: static files, no build, no test suite, so a gate would have nothing to run. Dropped the day a build step or a test suite exists.
-- **T2 — the gate runs in the containers.** No gate and no image; the bytes in the repo are the bytes nginx serves, so there is no production runtime to reproduce. Dropped with T1, when there is a gate to containerise.
-- **T5 — a test must be proven able to fail.** No suite to prove; this adoption's red/green was run against the fleet-level `scripts/fleet-versions.sh` instead of a project test. Dropped the day a suite exists.
+- **T1 — the gate is green before merge.** Met in part since `scripts/check.sh` landed beside the deploy script: it runs `bash -n`, the vendored deploy library’s drift check and that library’s own suite. It runs no dependency-advisory step, because there is no manifest and no lockfile to audit.
+- **T2 — the gate runs in the containers.** `scripts/check.sh` runs on the host: there is still no image and no container, and the bytes in the repo are the bytes nginx serves, so there is no production runtime to reproduce. Dropped the day this project gains a runtime of its own.
+- **T5 — a test must be proven able to fail.** The vendored library’s suite carries its own red proofs (`DEPLOY_LIB_DIR=<mutant copy>`), and `scripts/check.sh`’s file count was proven red with its own line deleted. `scripts/deploy.sh` has no `deploy-test.sh`, so its own guards are unproven. Dropped the day one is written.
 - **T6 — browser tests in-repo against a throwaway stack.** None: no gate to hang Playwright on and no seeded stack. Dropped when a gate exists — a static server is cheap to seed.
 - **T7 — the browser gate runs inside its caps.** Nothing to cap while T6 stands. Dropped with T6.
 - **Drift check (ROLLOUT step 4).** Not an in-gate test: the fleet-level `scripts/fleet-versions.sh` is this project's drift check, hashing the vendored body against its own header and against canonical. Dropped into the repo the day a test runner exists.

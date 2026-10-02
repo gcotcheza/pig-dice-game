@@ -2,6 +2,34 @@
 
 Why things are the way they are. Newest first.
 
+## The deploy is a script, and its gate check reads ci alone (2026-10-02)
+
+`scripts/deploy.sh` replaces the steps the runbook used to list by hand. The reason is the last
+line it prints: `finish()` in the vendored fleet library writes `DONE #<PR> live <sha> was <sha>
+gated <how>` into `/root/personal-vps-deploys/pig-dice-game/`, and that line is what the fleet's
+days page reads to say whether this project deployed. A runbook of `git pull` steps writes
+nothing, so the answer for pig-dice was "cannot tell".
+
+**Why the gate check is not the library's `gated()`.** Every other adopter calls it. It demands a
+green ledger row for both `ci` and `e2e` and the kinds are not configurable, so a project with no
+browser gate can never satisfy it: calling it here would mean passing `--gated-by-hand` on every
+deploy, which turns an override meant for rescue into the normal path and makes the DONE line read
+"ungated" when the gate this project does have was green. `gated_ci()` in `scripts/deploy.sh` reads
+the same ledger file and the same row format for the `ci` kind only, keeps the same
+`--gated-by-hand` override, and names the missing half in the DONE line as `e2e none`. The day T6
+is met that function goes and `gated` replaces it.
+
+**What a static site can honestly gate.** `scripts/check.sh` runs three static steps, cheapest
+first: `bash -n` over the shell scripts, a drift check that recomputes each vendored library file's
+body hash against the hash declared in its own first line, and the library's own suite. No network,
+no containers, no build. It carries no dependency-advisory step because there is no manifest and no
+lockfile to audit. Step 1 counts the files it read because a loop over a list that went empty passes
+every assertion inside it: with that count's own line deleted the gate printed `bash -n over 0 shell
+scripts` and exited 0.
+
+**What is not covered.** `scripts/deploy.sh` has no `deploy-test.sh`, where the other adopters do,
+so its landing, its verification and its refusals are reviewed rather than exercised against fakes.
+
 ## Adopted the fleet standard (2026-09-20)
 
 The fleet engineering standard is vendored at `docs/STANDARDS.md` (version 2026-09-20.2), with

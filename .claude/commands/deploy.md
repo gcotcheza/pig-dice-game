@@ -7,31 +7,51 @@
 **Branch:** main
 **Owner:** ghiecode:ghiecode
 
-Served by nginx via an `alias` block in the ghiecode server config (`/etc/nginx/sites-available/ghiecode`). No PHP, no build step, no process to restart.
+Served by nginx via an `alias` block in the ghiecode server config
+(`/etc/nginx/sites-available/ghiecode`). No PHP, no build step, no process to restart.
 
-Merging to `main` does not deploy — this runbook is the deploy, and it is run by hand.
+**Merging to `main` does not deploy.** This runbook is the deploy, it is run by hand, and
+`scripts/deploy.sh` is the whole of it: logging, pre-flight, the gate check, the
+fast-forward and the verification. Run it as root — it does its git as `ghiecode`.
 
-## Pre-flight checks
+## Before you start
 
-1. Confirm the current git branch in `/var/www/pig-dice-game` is `main`. If not, warn the user and stop.
-2. Show the latest 3 commit messages so the user can confirm what will be deployed.
+The deploy takes the merged PR number and refuses anything else: a PR that is not `MERGED`,
+a merge commit that is not `origin/main`, a checkout that is not on `main` or is dirty, and
+a commit with no green `ci` row in the gate ledger. The gate that writes that row is
+`scripts/check.sh`, run on the branch before the merge.
 
-## Deploy steps
+## Deploy
 
-If any step fails, stop and report the error.
+Each block below is its own shell: what a block reads, it sets.
 
-1. **Pull latest code**
-   ```bash
-   git-as ghiecode -C /var/www/pig-dice-game pull origin main
-   ```
+```bash
+PR=<merged PR number>
+/var/www/pig-dice-game/scripts/deploy.sh "${PR:?}"
+```
 
-2. **Fix ownership** (in case git pull created root-owned files)
-   ```bash
-   find /var/www/pig-dice-game -user root | wc -l   # must print 0 — git-as leaves nothing root-owned; repair narrowly with find … -user root -exec chown ghiecode:ghiecode {} +
-   ```
+It prints one line per step, keeps the full transcript under
+`/root/personal-vps-deploys/pig-dice-game/`, and ends with
+`DONE #<PR> live <sha> was <sha> gated <how> page 200 dice 200 root-owned 0` — that line is
+what the fleet ledger reads, and `was <sha>` is the rollback target.
 
-## Post-deploy verification
+## If it refuses
 
-1. Run `curl -s -o /dev/null -w "%{http_code}" https://ghiecode.io/games/pig-dice/` and confirm HTTP 200.
-2. Run `curl -s -o /dev/null -w "%{http_code}" https://ghiecode.io/games/pig-dice/dice-1.png` and confirm HTTP 200.
-3. Report deploy status with a summary of commits that were pulled.
+Read the refusal: it names the condition and what would satisfy it. Nothing has moved, because
+the fast-forward happens after every check. One override exists, for transition and rescue only:
+
+```bash
+PR=<merged PR number>
+/var/www/pig-dice-game/scripts/deploy.sh "${PR:?}" --gated-by-hand
+```
+
+It deploys a commit with no green `ci` row and records that in the DONE line as
+`gated by hand over [...]` instead of refusing.
+
+## Rollback
+
+```bash
+BEFORE=<the sha the DONE line printed after "was">
+git-as ghiecode -C /var/www/pig-dice-game reset --hard "${BEFORE:?}"
+curl -s -o /dev/null -w '%{http_code}\n' https://ghiecode.io/games/pig-dice/
+```
