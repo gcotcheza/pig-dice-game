@@ -115,10 +115,12 @@ class PigGame {
     this.currentRolls = 0;
     this.activePlayer = 0;
     this.playing = true;
-    this.names = ['Player 1', 'Player 2'];
+    this.names = [this.nameEls[0].value || 'Player 1', this.nameEls[1].value || 'Player 2'];
     this.targetScore = parseInt(this.targetInputs[0].value, 10) || 100;
     this.setTargetInputsDisabled(false);
     this.stopConfetti();
+    clearTimeout(this.rollTimer);
+    this.rolling = false;
     this.render();
     this.save();
   }
@@ -328,7 +330,7 @@ class PigGame {
     cube.style.transition = `transform ${PigGame.ROLL_DURATION_MS}ms cubic-bezier(0.45, 0.05, 0.25, 1)`;
     cube.style.transform = `rotateX(${targetX}deg) rotateY(${targetY}deg)`;
 
-    setTimeout(() => {
+    this.rollTimer = setTimeout(() => {
       cube.classList.remove('dice--rolling');
       cube.style.transition = 'none';
       cube.style.setProperty('--land-transform', landTransform);
