@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Pig Dice Game — a vanilla HTML/CSS/JavaScript implementation of the two-player Pig dice game. There is no build system, no package manager, and no test suite. The project is deployed on Vercel as a static site.
+Pig Dice Game — a vanilla HTML/CSS/JavaScript implementation of the two-player Pig dice game. There is no build system, no package manager, and no test suite. The files are served as-is by nginx at https://ghiecode.io/games/pig-dice/.
 
 ## Commands
 
@@ -37,13 +37,15 @@ Pig Dice Game — a vanilla HTML/CSS/JavaScript implementation of the two-player
 
 ## Architecture
 
-The entire game logic lives in `script.js` and relies on DOM element selectors defined in `index.html`. Key points:
+All game logic is one `PigGame` class in `script.js`, built once at the bottom of the file. It reads its elements from `index.html` by id and class. Key points:
 
-- **Global mutable state** (declared with `let`): `scores` (length-2 array), `currentScore`, `activePlayer` (0 or 1), `playing` (boolean). `init()` both initializes these on page load and resets them when "New Game" is clicked.
-- **Player indexing convention**: the two players share a duplicated structure in the DOM, distinguished by a numeric suffix `0` or `1`. Code references elements via template strings like `` `current--${activePlayer}` ``, `` `score--${activePlayer}` ``, `` `.player--${activePlayer}` ``. Keep this pattern when adding per-player elements — both the CSS classes (`player--0`, `player--1`, `player--active`, `player--winner`) and the IDs (`score--0`, `score--1`, `current--0`, `current--1`) follow it.
-- **Turn flow**: `btnRoll` click → random 1–6 → if 1, `switchPlayer()` resets `currentScore` and toggles `player--active`; otherwise accumulate into `currentScore` and update the active player's current display. `btnHold` commits `currentScore` to `scores[activePlayer]`; at ≥100 the game ends (sets `playing = false`, hides dice, adds `player--winner`).
-- **Dice images**: `dice-1.png` … `dice-6.png` at the repo root are referenced by filename (`diceEl.src = \`dice-${dice}.png\``). New dice assets must keep this naming.
-- **CSS state classes**: visual state is driven by toggling `player--active`, `player--winner`, and `hidden` on existing elements rather than re-rendering.
+- **State** (fields on the instance): `scores` (length-2 array), `history` (per-player list of turn results, 0 for a bust), `currentScore`, `currentRolls`, `activePlayer` (0 or 1), `playing`, `rolling`, `targetScore`, `names`. `init()` sets them for a new game; `load()` restores them.
+- **New Game**: `newGame()` takes the target from the target inputs and `init()` keeps the names typed in the name inputs. The target is 10–999 and is locked (inputs disabled) once a game has started.
+- **Persistence**: `save()` writes the state to `localStorage` under the key `pigGame`; the constructor calls `load() || init()`.
+- **Player indexing convention**: the two players share a duplicated structure in the DOM, distinguished by a numeric suffix `0` or `1`. Code reads elements by id such as `score--0`, `name--1`, `history--0`, and the active player's element by index. Keep this pattern when adding per-player elements — both the CSS classes (`player--0`, `player--1`, `player--active`, `player--winner`) and the IDs (`score--0`, `score--1`, `name--0`, `name--1`) follow it.
+- **Turn flow**: `roll()` picks 1–6 and animates the dice; on landing, a 1 is a bust (`switchPlayer()` zeroes `currentScore`), anything else adds to `currentScore`. `hold()` banks `currentScore` into `scores[activePlayer]`; at `targetScore` or more the game ends (`playing = false`, winner shown, confetti and fireworks on a canvas). Keys: `r` roll, `h` hold, `n` new game, `Escape` closes the settings modal.
+- **Dice**: a 3D cube whose six faces are the `dice-1.png` … `dice-6.png` images at the repo root, referenced by filename in `index.html`. New dice assets must keep this naming.
+- **CSS state classes**: visual state is driven by toggling classes such as `player--active`, `player--winner`, `is-winner`, `dice--rolling`, `dice--landed` and `modal--open` on existing elements rather than re-rendering.
 
 ## Conventions
 
