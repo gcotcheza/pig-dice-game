@@ -35,3 +35,9 @@ literally, at `.claude/commands/deploy.md`. It previously existed only in the op
 directory, where a clone of this repo could not see it. It now says in writing what was previously
 only convention: merging to `main` does not deploy, because the live checkout at
 `/var/www/pig-dice-game` is updated by a hand-run `git pull`.
+
+## Keyboard shortcuts stand down for modifiers and the overlay (2026-10-11)
+
+R, H and N act only as bare keys. With Ctrl, Cmd or Alt held the key belongs to the browser
+(Ctrl+N, Cmd+H), and acting on it as well wiped or banked a game the player never meant to touch.
+While the Settings/Rules overlay is open the board is behind it, so only Escape (close) is honoured.

@@ -90,6 +90,16 @@ body {
   transition: all 0.2s ease;
   font-family: inherit;
 }
+.gear::before,
+.modal-close::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
 .gear:hover {
   color: var(--clr-text);
   border-color: var(--clr-border-active);
@@ -151,13 +161,14 @@ body {
   border: none;
   outline: none;
   color: var(--clr-text-dim);
-  font-size: 1.2rem;
+  font-size: 16px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   padding: 0.2rem 0;
   width: 100%;
   min-width: 0;
+  text-overflow: ellipsis;
   border-bottom: 1px dashed transparent;
   transition: all 0.2s ease;
 }
@@ -343,7 +354,7 @@ body {
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
-  transform: rotateX(0deg) rotateY(0deg);
+  transform: rotateX(-25deg) rotateY(135deg);
   will-change: transform;
 }
 
