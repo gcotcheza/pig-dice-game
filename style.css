@@ -168,6 +168,7 @@ body {
   padding: 0.2rem 0;
   width: 100%;
   min-width: 0;
+  text-overflow: ellipsis;
   border-bottom: 1px dashed transparent;
   transition: all 0.2s ease;
 }

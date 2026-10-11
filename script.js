@@ -326,7 +326,7 @@ class PigGame {
 
     cube.classList.remove('hidden', 'dice--landed');
     cube.style.transition = 'none';
-    cube.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    cube.style.transform = PigGame.REST_TRANSFORM;
     void cube.offsetWidth;
 
     cube.classList.add('dice--rolling');
