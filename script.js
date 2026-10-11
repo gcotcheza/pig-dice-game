@@ -78,12 +78,13 @@ class PigGame {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'Escape') return this.closeSettings();
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target.tagName === 'INPUT' || this.settingsOverlay.classList.contains('modal--open')) return;
       const key = e.key.toLowerCase();
       if (key === 'r') this.roll();
       else if (key === 'h') this.hold();
       else if (key === 'n') this.newGame();
-      else if (e.key === 'Escape') this.closeSettings();
     });
 
     // Settings modal — opened by gear (mobile) or Rules button (desktop)
@@ -304,13 +305,15 @@ class PigGame {
 
   static ROLL_DURATION_MS = 850;
   static ROLL_REVOLUTIONS = 2;
+  // Corner view of 2, 3 and 5; the 1 alone reads as a bust. Mirrors .dice-cube in style.css.
+  static REST_TRANSFORM = 'rotateX(-25deg) rotateY(135deg)';
 
   resetDice() {
     const cube = this.diceCube;
     cube.classList.remove('hidden', 'dice--rolling', 'dice--landed');
     cube.style.transition = 'none';
-    cube.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    cube.style.setProperty('--land-transform', 'rotateX(0deg) rotateY(0deg)');
+    cube.style.transform = PigGame.REST_TRANSFORM;
+    cube.style.setProperty('--land-transform', PigGame.REST_TRANSFORM);
   }
 
   showDice(value, onLand) {
