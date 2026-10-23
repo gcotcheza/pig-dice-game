@@ -3,7 +3,7 @@
 Fleet engineering standards: docs/STANDARDS.md (also loaded via .claude/rules/standards.md).
 They apply here in full; anything below overrides them and says why.
 
-- Where work happens: a worktree under `/var/www/pig-dice-game-worktrees/` — this checkout is production, served live by nginx, so never edit, branch or build in it. Workers and reviewers use a lane clone under `/srv/worker-scratch/<lane>/repo`, never a worktree off the live repo.
+- Where work happens: a lane clone under `/srv/worker-scratch/<lane>/repo`; this checkout is production, served live by nginx, so never edit, branch, build or add worktrees from it.
 - Merging to main does not deploy. Runbook: `.claude/commands/deploy.md`.
 - The gate: none — see Exceptions. Browser gate: none yet.
 - Layers: none — a flat directory of static files loaded straight by the browser.
