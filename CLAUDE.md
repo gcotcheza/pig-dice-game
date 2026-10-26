@@ -1,6 +1,6 @@
 # Pig Dice Game — house rules
 
-Fleet engineering standards: docs/STANDARDS.md (also loaded via .claude/rules/standards.md).
+Fleet engineering standards live in `gcotcheza/engineering-standards` and load centrally; this repo keeps no copy.
 They apply here in full; anything below overrides them and says why.
 
 - Where work happens: a lane clone under `/srv/worker-scratch/<lane>/repo`; this checkout is production, served live by nginx, so never edit, branch, build or add worktrees from it.

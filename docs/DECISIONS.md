@@ -2,11 +2,19 @@
 
 Why things are the way they are. Newest first.
 
+## The fleet standard is no longer vendored (2026-10-25)
+
+The repo no longer carries a copy of the fleet engineering standard or the rules-folder link to it
+(backlog 624; the fleet stopped vendoring it into apps). The standard lives in
+`gcotcheza/engineering-standards` and loads centrally, so a copy here could only go stale at every
+fleet release. This supersedes the vendoring and the fleet-level drift check described below; the
+rest of that entry (no gate, the exceptions, the runbook) still holds.
+
 ## Adopted the fleet standard (2026-09-20)
 
-The fleet engineering standard is vendored at `docs/STANDARDS.md` (version 2026-09-20.2), with
-`.claude/rules/standards.md` symlinked to it: one file, two doors — one for a person reading the
-repo, one for a session loading its rules.
+The fleet engineering standard was vendored into this repo (version 2026-09-20.2), with a symlink
+under the session rules folder pointing at it: one file, two doors — one for a person reading the
+repo, one for a session loading its rules. Superseded 2026-10-25, see above.
 
 **Why there is no `scripts/check.sh` here.** Pig Dice is a flat directory of static files —
 `index.html`, `script.js`, `style.css` and six dice PNGs — served by an nginx `alias`. There is no
